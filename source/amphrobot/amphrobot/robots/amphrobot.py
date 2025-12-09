@@ -64,7 +64,7 @@ AMPHROBOT_CFG = AmphrobotArticulationCfg(
         "Front_Left_Side_joint", "Front_Left_Thigh_joint", "Front_Left_Calf_joint",
         "Front_Right_Side_joint", "Front_Right_Thigh_joint", "Front_Right_Calf_joint",
         "Hind_Left_Side_joint", "Hind_Left_Thigh_joint", "Hind_Left_Calf_joint",
-        "Hind_Right_Side_joint", "Hind_Right_Thigh_joint", "Front_Right_Calf_joint"
+        "Hind_Right_Side_joint", "Hind_Right_Thigh_joint", "Hind_Right_Calf_joint"
     ],
     # fmt: on
 )
