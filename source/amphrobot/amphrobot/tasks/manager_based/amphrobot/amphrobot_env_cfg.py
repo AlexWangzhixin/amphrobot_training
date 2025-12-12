@@ -139,7 +139,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
-            "mass_distribution_params": (-1.0, 3.0),
+            "mass_distribution_params": (0.0, 3.0),
             "operation": "add",
         },
     )
@@ -181,12 +181,12 @@ class EventCfg:
     )
 
     # interval
-    push_robot = EventTerm(
-        func=mdp.push_by_setting_velocity,
-        mode="interval",
-        interval_range_s=(5.0, 10.0),
-        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    )
+    # push_robot = EventTerm(
+    #     func=mdp.push_by_setting_velocity,
+    #     mode="interval",
+    #     interval_range_s=(5.0, 10.0),
+    #     params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+    # )
 
 
 @configclass
@@ -199,7 +199,7 @@ class CommandsCfg:
         rel_standing_envs=0.1,
         debug_vis=True,
         ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.1, 0.1), lin_vel_y=(-0.1, 0.1), ang_vel_z=(-1, 1)
+            lin_vel_x=(-0.1, 0.1), lin_vel_y=(0.0, 0.0), ang_vel_z=(0.0, 0.0)
         ),
         limit_ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.4, 0.4), ang_vel_z=(-1.0, 1.0)
@@ -275,7 +275,7 @@ class RewardsCfg:
 
     # -- task
     track_lin_vel_xy = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=1.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_lin_vel_xy_exp, weight=3, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
     track_ang_vel_z = RewTerm(
         func=mdp.track_ang_vel_z_exp, weight=0.75, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
@@ -288,7 +288,7 @@ class RewardsCfg:
     joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-2e-4)
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.1)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-10.0)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-6.0)
     energy = RewTerm(func=mdp.energy, weight=-2e-5)
 
     # -- robot
@@ -304,45 +304,12 @@ class RewardsCfg:
         },
     )
 
-    # -- feet
-    # feet_air_time = RewTerm(
-    #     func=mdp.feet_air_time,
-    #     weight=0.1,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
-    #         "command_name": "base_velocity",
-    #         "threshold": 0.5,
-    #     },
-    # )
-    # air_time_variance = RewTerm(
-    #     func=mdp.air_time_variance_penalty,
-    #     weight=-1.0,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot")},
-    # )
-    # feet_slide = RewTerm(
-    #     func=mdp.feet_slide,
-    #     weight=-0.1,
-    #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
-    #     },
-    # )
-    # feet_contact_forces = RewTerm(
-    #     func=mdp.contact_forces,
-    #     weight=-0.02,
-    #     params={
-    #         "threshold": 100.0,
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
-    #     },
-    # )
-
     # -- other
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1,
         params={
             "threshold": 1,
-            # "sensor_cfg": SceneEntityCfg("contact_forces", body_names=["Head_.*", ".*_hip", ".*_thigh", ".*_calf"]),
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_Side_link", ".*Thigh_link"]),
         },
     )
@@ -355,7 +322,7 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1000.0},
     )
     bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.8})
 
