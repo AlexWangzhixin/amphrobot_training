@@ -127,10 +127,10 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.3, 1.2),
-            "dynamic_friction_range": (0.3, 1.2),
-            "restitution_range": (0.0, 0.15),
-            "num_buckets": 64,
+            "static_friction_range": (0.8, 1.0),
+            "dynamic_friction_range": (0.8, 1.0),
+            "restitution_range": (0.0, 0.05),
+            "num_buckets": 8,
         },
     )
 
@@ -139,7 +139,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
-            "mass_distribution_params": (0.0, 3.0),
+            "mass_distribution_params": (0.0, 1.0),
             "operation": "add",
         },
     )
@@ -151,7 +151,7 @@ class EventCfg:
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
             "force_range": (0.0, 0.0),
-            "torque_range": (-0.0, 0.0),
+            "torque_range": (0.0, 0.0),
         },
     )
 
@@ -159,7 +159,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "z" : (0.10, 0.10), "yaw": (-0.2, 0.2)},
             "velocity_range": {
                 "x": (0.0, 0.0),
                 "y": (0.0, 0.0),
@@ -176,7 +176,7 @@ class EventCfg:
         mode="reset",
         params={
             "position_range": (1.0, 1.0),
-            "velocity_range": (-1.0, 1.0),
+            "velocity_range": (-0.5, 0.5),
         },
     )
 
@@ -195,24 +195,64 @@ class CommandsCfg:
 
     base_velocity = mdp.UniformLevelVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(10.0, 10.0),
+        resampling_time_range=(4.0,6.0),
         rel_standing_envs=0.1,
         debug_vis=True,
         ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.1, 0.1), lin_vel_y=(0.0, 0.0), ang_vel_z=(0.0, 0.0)
+            lin_vel_x=(-0.4, 0.6), lin_vel_y=(-0.2, 0.2), ang_vel_z=(-0.6, 0.6)
         ),
         limit_ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.4, 0.4), ang_vel_z=(-1.0, 1.0)
+            lin_vel_x=(-0.6, 0.6), lin_vel_y=(-0.3, 0.3), ang_vel_z=(-0.6, 0.6)
         ),
     )
+
+
+# policy output
+#    → (optional) rsl-rl clip_actions
+#       → scale
+#          → offset (default joint pos)
+#             → per-joint clip (a_min, a_max)
+#                → applied joint position target
+
 
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
 
     JointPositionAction = mdp.JointPositionActionCfg(
-        asset_name="robot", joint_names=[".*"], scale=0.25, use_default_offset=True, clip={".*": (-100.0, 100.0)}
+        asset_name="robot",
+        joint_names=[".*"],
+        use_default_offset=True,
+
+        # Per-joint scale
+        scale={
+            ".*_Side_joint":  0.3,
+            ".*_Thigh_joint": 0.25,
+            ".*_Calf_joint":  0.2,
+        },
+
+        # Tight per-joint clip (recomputed for the scales above)
+        clip={
+            # ---- Side joints (scale = 0.3) ----
+            "Front_Left_Side_joint":  (-1.40,  8.20),
+            "Front_Right_Side_joint": (-8.20,  1.40),
+            "Hind_Left_Side_joint":   (-1.40,  8.20),
+            "Hind_Right_Side_joint":  (-8.20,  1.40),
+
+            # ---- Thigh joints (scale = 0.25) ----
+            "Front_Left_Thigh_joint":  (-8.44,  2.04),
+            "Front_Right_Thigh_joint": (-8.44,  2.04),
+            "Hind_Left_Thigh_joint":   (-9.24,  1.24),
+            "Hind_Right_Thigh_joint":  (-9.24,  1.24),
+
+            # ---- Calf joints (scale = 0.2) ----
+            "Front_Left_Calf_joint":  (-4.30, 11.45),
+            "Front_Right_Calf_joint": (-4.30, 11.45),
+            "Hind_Left_Calf_joint":   (-4.30, 11.45),
+            "Hind_Right_Calf_joint":  (-4.30, 11.45),
+        },
     )
+
 
 
 @configclass
@@ -224,14 +264,14 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, clip=(-100, 100), noise=Unoise(n_min=-0.2, n_max=0.2))
-        projected_gravity = ObsTerm(func=mdp.projected_gravity, clip=(-100, 100), noise=Unoise(n_min=-0.05, n_max=0.05))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, clip=(-100, 100), noise=Unoise(n_min=-0.1, n_max=0.1))
+        projected_gravity = ObsTerm(func=mdp.projected_gravity, clip=(-100, 100), noise=Unoise(n_min=-0.03, n_max=0.03))
         velocity_commands = ObsTerm(
             func=mdp.generated_commands, clip=(-100, 100), params={"command_name": "base_velocity"}
         )
-        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel, clip=(-100, 100), noise=Unoise(n_min=-0.01, n_max=0.01))
+        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel, clip=(-100, 100), noise=Unoise(n_min=-0.005, n_max=0.005))
         joint_vel_rel = ObsTerm(
-            func=mdp.joint_vel_rel, scale=0.05, clip=(-100, 100), noise=Unoise(n_min=-1.5, n_max=1.5)
+            func=mdp.joint_vel_rel, scale=0.05, clip=(-100, 100), noise=Unoise(n_min=-0.3, n_max=0.3)
         )
         last_action = ObsTerm(func=mdp.last_action, clip=(-100, 100))
 
@@ -275,42 +315,66 @@ class RewardsCfg:
 
     # -- task
     track_lin_vel_xy = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=3, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_lin_vel_xy_exp, weight=7, params={"command_name": "base_velocity", "std": math.sqrt(0.09)}
     )
     track_ang_vel_z = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=0.75, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
 
     # -- base
-    base_linear_velocity = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
-    base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    joint_vel = RewTerm(func=mdp.joint_vel_l2, weight=-0.001)
-    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-2e-4)
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.1)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-6.0)
-    energy = RewTerm(func=mdp.energy, weight=-2e-5)
+    base_linear_velocity = RewTerm(func=mdp.lin_vel_z_l2, weight=-1.0)
+    base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.02)
+    joint_vel = RewTerm(func=mdp.joint_vel_l2, weight=-3e-4)
+    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-8)
+    joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.03)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-2.0)
+    energy = RewTerm(func=mdp.energy, weight=-1e-5)
 
     # -- robot
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-2.5)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.2)
 
     joint_pos = RewTerm(
         func=mdp.joint_position_penalty,
-        weight=-0.7,
+        weight=-0.2,
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stand_still_scale": 5.0,
-            "velocity_threshold": 0.3,
+            "stand_still_scale": 2.0,
+            "velocity_threshold": 0.15,
+        },
+    )
+
+    # -- feet
+    feet_air_time = RewTerm(
+        func=mdp.feet_air_time,
+        weight=0.15,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_Calf_link"),
+            "command_name": "base_velocity",
+            "threshold": 0.3,
+        },
+    )
+    air_time_variance = RewTerm(
+        func=mdp.air_time_variance_penalty,
+        weight=-0.2,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_Calf_link")},
+    )
+    feet_slide = RewTerm(
+        func=mdp.feet_slide,
+        weight=-0.4,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*_Calf_link"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_Calf_link"),
         },
     )
 
     # -- other
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
-        weight=-1,
+        weight=-0.5,
         params={
             "threshold": 1,
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_Side_link", ".*Thigh_link"]),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_Side_link", ".*_Thigh_link"]),
         },
     )
 
@@ -322,9 +386,9 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1000.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 500.0},
     )
-    bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.8})
+    bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 1})
 
 
 @configclass

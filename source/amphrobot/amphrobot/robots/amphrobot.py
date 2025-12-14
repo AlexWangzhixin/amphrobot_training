@@ -38,10 +38,10 @@ class AmphrobotUsdFileCfg(sim_utils.UsdFileCfg):
 
 AMPHROBOT_CFG = AmphrobotArticulationCfg(
     spawn=AmphrobotUsdFileCfg(
-        usd_path="/home/zituchen/Documents/amphibious/urdf/model/model.usd",
+        usd_path="C:\\Users\\zitu1\\Documents\\amphibious\\urdf\\model\\model.usd",
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.4),
+        pos=(0.0, 0.0, 0.10),
         joint_pos={
             ".*Left_Side_joint": -0.1,
             ".*Right_Side_joint": 0.1,

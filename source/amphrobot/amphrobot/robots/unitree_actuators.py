@@ -119,117 +119,14 @@ class UnitreeActuatorCfg(DelayedPDActuatorCfg):
 
 
 @configclass
-class UnitreeActuatorCfg_M107_15(UnitreeActuatorCfg):
-    X1 = 14.0
-    X2 = 25.6
-    Y1 = 150.0
-    Y2 = 182.8
-
-    armature = 0.063259741
-
-
-@configclass
-class UnitreeActuatorCfg_M107_24(UnitreeActuatorCfg):
-    X1 = 8.8
-    X2 = 16
-    Y1 = 240
-    Y2 = 292.5
-
-    armature = 0.160478022
-
-
-@configclass
 class UnitreeActuatorCfg_Go2HV(UnitreeActuatorCfg):
-    X1 = 13.5
-    X2 = 30
-    Y1 = 20.2
-    Y2 = 23.4
+    # X1 = 13.5
+    # X2 = 30
+    # Y1 = 20.2
+    # Y2 = 23.4
 
+    X1 = 6.00
+    X2 = 12.00
+    Y1 = 3.5
+    Y2 = 3.5
 
-@configclass
-class UnitreeActuatorCfg_N7520_14p3(UnitreeActuatorCfg):
-    # Decimal point cannot be used as variable name, use `p` instead
-    X1 = 22.63
-    X2 = 35.52
-    Y1 = 71
-    Y2 = 83.3
-
-    Fs = 1.6
-    Fd = 0.16
-
-    """
-    | rotor  | 0.489e-4 kg·m²
-    | gear_1 | 0.098e-4 kg·m² | ratio | 4.5
-    | gear_2 | 0.533e-4 kg·m² | ratio | 48/22+1
-    """
-    armature = 0.01017752
-
-
-@configclass
-class UnitreeActuatorCfg_N7520_22p5(UnitreeActuatorCfg):
-    # Decimal point cannot be used as variable name, use `p` instead
-    X1 = 14.5
-    X2 = 22.7
-    Y1 = 111.0
-    Y2 = 131.0
-
-    Fs = 2.4
-    Fd = 0.24
-
-    """
-    | rotor  | 0.489e-4 kg·m²
-    | gear_1 | 0.109e-4 kg·m² | ratio | 4.5
-    | gear_2 | 0.738e-4 kg·m² | ratio | 5.0
-    """
-    armature = 0.025101925
-
-
-@configclass
-class UnitreeActuatorCfg_N5010_16(UnitreeActuatorCfg):
-    X1 = 27.0
-    X2 = 41.5
-    Y1 = 9.5
-    Y2 = 17.0
-
-    """
-    | rotor  | 0.084e-4 kg·m²
-    | gear_1 | 0.015e-4 kg·m² | ratio | 4
-    | gear_2 | 0.068e-4 kg·m² | ratio | 4
-    """
-    armature = 0.0021812
-
-
-@configclass
-class UnitreeActuatorCfg_N5020_16(UnitreeActuatorCfg):
-    X1 = 30.86
-    X2 = 40.13
-    Y1 = 24.8
-    Y2 = 31.9
-
-    Fs = 0.6
-    Fd = 0.06
-
-    """
-    | rotor  | 0.139e-4 kg·m²
-    | gear_1 | 0.017e-4 kg·m² | ratio | 46/18+1
-    | gear_2 | 0.169e-4 kg·m² | ratio | 56/16+1
-    """
-    armature = 0.003609725
-
-
-@configclass
-class UnitreeActuatorCfg_W4010_25(UnitreeActuatorCfg):
-    X1 = 15.3
-    X2 = 24.76
-    Y1 = 4.8
-    Y2 = 8.6
-
-    Fs = 0.6
-    Fd = 0.06
-
-    """
-    | rotor  | 0.068e-4 kg·m²
-    | gear_1 |                | ratio | 5
-    | gear_2 |                | ratio | 5
-    """
-    armature = 0.00425

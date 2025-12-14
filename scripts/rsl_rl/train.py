@@ -69,6 +69,12 @@ if version.parse(installed_version) < version.parse(RSL_RL_VERSION):
     )
     exit(1)
 
+
+
+#----------------------------- main training imports ---------------------------------
+
+
+
 """Rest everything follows."""
 
 import gymnasium as gym
@@ -101,6 +107,34 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False
+
+#----------------------------- main training block ---------------------------------
+
+class DebugActionWrapper(gym.Wrapper):
+    def __init__(self, env, every=100):
+        super().__init__(env)
+        self._dbg_i = 0
+        self._every = every
+
+    def step(self, action):
+        # action here is what gets passed down into the IsaacLab env (often after rsl-rl clipping)
+        if self._dbg_i % self._every == 0:
+            a = action
+            if isinstance(a, torch.Tensor):
+                amin = a.min().item()
+                amax = a.max().item()
+                amean = a.mean().item()
+                astd = a.std(unbiased=False).item()
+                print(f"[DEBUG] step {self._dbg_i} | action range [{amin:.3f}, {amax:.3f}] mean {amean:.3f} std {astd:.3f}")
+                print(f"[DEBUG] first env action[:12]: {a[0, :].detach().cpu()}")
+            else:
+                # fallback for numpy
+                import numpy as np
+                amin, amax = np.min(a), np.max(a)
+                print(f"[DEBUG] step {self._dbg_i} | action range [{amin:.3f}, {amax:.3f}]")
+                print(f"[DEBUG] first env action[:10]: {a[0, :10]}")
+        self._dbg_i += 1
+        return self.env.step(action)
 
 
 @hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
@@ -147,6 +181,93 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     if isinstance(env.unwrapped, DirectMARLEnv):
         env = multi_agent_to_single_agent(env)
 
+    # # --- DEBUG ROOT STATE ---
+    # isaac_env = env.unwrapped  # unwrap OrderEnforcing / Gymnasium wrappers
+
+    # print("[DEBUG] isaac_env type:", type(isaac_env))
+
+    # # reset the raw IsaacLab env
+    # obs, _ = isaac_env.reset()
+
+    # # read root state before step
+    # root_before = isaac_env.scene["robot"].data.root_state_w.clone()
+    # print("[DEBUG] root before step (x, y, z):", root_before[0, :3])
+
+    # # get action dimension from action manager
+    # action_dim = isaac_env.action_manager.total_action_dim
+
+    # # create a dummy zero action with the right shape and type
+    # dummy_action = torch.zeros(
+    #     (isaac_env.num_envs, action_dim),
+    #     device=isaac_env.device,
+    # )
+
+    # for i in range(20):
+    #     obs, rew, terminated, truncated, info = isaac_env.step(dummy_action)
+    #     root = isaac_env.scene["robot"].data.root_state_w.clone()
+    #     print(f"[DEBUG] step {i:2d} (x, y, z):", root[0, :3])
+
+    # # stop here so training doesn't run during debugging
+    # sys.exit(0)
+    # # --- END DEBUG ---
+
+    # isaac_env = env.unwrapped   # unwrap Gym wrapper
+
+    # # Reset environment
+    # obs, _ = isaac_env.reset()
+
+    # # Access the contact sensor configured in your env
+    # # (in your cfg it is named "contact_forces")
+    # contact_sensor = isaac_env.scene.sensors["contact_forces"]
+
+    # # Inspect available bodies
+    # body_names = contact_sensor.body_names
+    # print("[DEBUG] contact sensor bodies:")
+    # for i, name in enumerate(body_names):
+    #     print(f"  {i}: {name}")
+
+    # # Find the index of the base link in the contact sensor bodies
+    # base_index = None
+    # for i, name in enumerate(body_names):
+    #     if "base_link" in name:   # adapt if your base link has a slightly different name
+    #         base_index = i
+    #         break
+
+    # if base_index is None:
+    #     print("[ERROR] Could not find 'base_link' in contact sensor body_names")
+    #     sys.exit(1)
+
+    # print(f"[DEBUG] Using base_index = {base_index} for {body_names[base_index]}")
+
+    # # Number of debug steps to run
+    # num_debug_steps = 50
+
+    # # Step through physics with zero action
+    # action_dim = isaac_env.action_manager.total_action_dim
+    # dummy_action = torch.zeros((isaac_env.num_envs, action_dim), device=isaac_env.device)
+
+    # print("\n[DEBUG] Printing base-link contact forces...")
+
+    # for i in range(num_debug_steps):
+    #     isaac_env.step(dummy_action)
+
+    #     # Shape: (num_envs, history_length, num_bodies, 3)
+    #     forces_hist = contact_sensor.data.net_forces_w_history
+
+    #     # Forces for base body: (num_envs, history_length, 3)
+    #     base_forces = forces_hist[:, :, base_index, :]
+
+    #     # Magnitudes: (num_envs, history_length)
+    #     force_mag = torch.norm(base_forces, dim=-1)
+
+    #     # Max over history
+    #     max_force = force_mag.max(dim=1)[0]   # (num_envs,)
+
+    #     print(f"Step {i:02d} | Max base contact force: {max_force[0].item():.2f} N")
+
+    # sys.exit(0)
+
+
     # save resume path before creating a new log_dir
     if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
@@ -163,7 +284,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         print_dict(video_kwargs, nesting=4)
         env = gym.wrappers.RecordVideo(env, **video_kwargs)
 
+
+    # env = DebugActionWrapper(env, every=100)
+
     # wrap around environment for rsl-rl
+   
     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
 
     # create runner from rsl-rl
