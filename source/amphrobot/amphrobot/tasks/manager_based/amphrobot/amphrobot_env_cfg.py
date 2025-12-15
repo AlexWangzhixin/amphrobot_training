@@ -328,11 +328,11 @@ class RewardsCfg:
     joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
     joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.04)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.5)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     energy = RewTerm(func=mdp.energy, weight=-1e-5)
 
     # -- robot
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.2)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.5)
 
     joint_pos = RewTerm(
         func=mdp.joint_position_penalty,
@@ -347,7 +347,7 @@ class RewardsCfg:
     # -- feet
     feet_air_time = RewTerm(
         func=mdp.feet_air_time,
-        weight=0.15,
+        weight=0.3,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_Calf_link"),
             "command_name": "base_velocity",
@@ -372,7 +372,7 @@ class RewardsCfg:
     # -- other
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
-        weight=-0.5,
+        weight=-0.3,
         params={
             "threshold": 1,
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_Side_link", ".*_Thigh_link"]),
