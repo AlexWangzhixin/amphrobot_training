@@ -195,7 +195,7 @@ class CommandsCfg:
 
     base_velocity = mdp.UniformLevelVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(6,8),
+        resampling_time_range=(6.0,8.0),
         rel_standing_envs=0.1,
         debug_vis=True,
         ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
@@ -318,17 +318,17 @@ class RewardsCfg:
         func=mdp.track_lin_vel_xy_exp, weight=7, params={"command_name": "base_velocity", "std": math.sqrt(0.09)}
     )
     track_ang_vel_z = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=2, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_exp, weight=3, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
 
     # -- base
     base_linear_velocity = RewTerm(func=mdp.lin_vel_z_l2, weight=-1.0)
     base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.02)
     joint_vel = RewTerm(func=mdp.joint_vel_l2, weight=-3e-4)
-    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-7)
+    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
     joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.03)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-2.0)
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.04)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.5)
     energy = RewTerm(func=mdp.energy, weight=-1e-5)
 
     # -- robot
