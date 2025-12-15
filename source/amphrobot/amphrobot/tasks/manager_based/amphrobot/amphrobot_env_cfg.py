@@ -199,7 +199,7 @@ class CommandsCfg:
         rel_standing_envs=0.1,
         debug_vis=True,
         ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.4, 0.6), lin_vel_y=(-0.2, 0.2), ang_vel_z=(-0.3, 0.3)
+            lin_vel_x=(-0.4, 0.6), lin_vel_y=(-0.2, 0.2), ang_vel_z=(-0.6, 0.6)
         ),
         limit_ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.6, 0.6), lin_vel_y=(-0.3, 0.3), ang_vel_z=(-0.6, 0.6)
@@ -253,6 +253,11 @@ class ActionsCfg:
         },
     )
 
+    # Reward defines the goal
+    # Critic interprets progress toward the goal
+    # Policy changes behavior using the critic’s judgment
+
+    # Reward → trains the critic → guides the policy → changes future reward
 
 
 @configclass
@@ -264,14 +269,14 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, clip=(-100, 100), noise=Unoise(n_min=-0.05, n_max=0.05))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, clip=(-100, 100), noise=Unoise(n_min=-0.1, n_max=0.1))
         projected_gravity = ObsTerm(func=mdp.projected_gravity, clip=(-100, 100), noise=Unoise(n_min=-0.03, n_max=0.03))
         velocity_commands = ObsTerm(
             func=mdp.generated_commands, clip=(-100, 100), params={"command_name": "base_velocity"}
         )
         joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel, clip=(-100, 100), noise=Unoise(n_min=-0.005, n_max=0.005))
         joint_vel_rel = ObsTerm(
-            func=mdp.joint_vel_rel, scale=0.05, clip=(-100, 100), noise=Unoise(n_min=-0.15, n_max=0.15)
+            func=mdp.joint_vel_rel, scale=0.05, clip=(-100, 100), noise=Unoise(n_min=-0.3, n_max=0.3)
         )
         last_action = ObsTerm(func=mdp.last_action, clip=(-100, 100))
 
@@ -318,14 +323,14 @@ class RewardsCfg:
         func=mdp.track_lin_vel_xy_exp, weight=7, params={"command_name": "base_velocity", "std": math.sqrt(0.09)}
     )
     track_ang_vel_z = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=3, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_exp, weight=1.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
 
     # -- base
     base_linear_velocity = RewTerm(func=mdp.lin_vel_z_l2, weight=-1.0)
     base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.02)
     joint_vel = RewTerm(func=mdp.joint_vel_l2, weight=-3e-4)
-    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
+    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-7.5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
     joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.04)
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
@@ -372,7 +377,7 @@ class RewardsCfg:
     # -- other
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
-        weight=-0.3,
+        weight=-0.5,
         params={
             "threshold": 1,
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_Side_link", ".*_Thigh_link"]),
