@@ -43,8 +43,11 @@ AMPHROBOT_CFG = AmphrobotArticulationCfg(
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.10),
         joint_pos={
-            ".*Left_Side_joint": -0.1,
-            ".*Right_Side_joint": 0.1,
+            "Front_Left_Side_joint": 0.2,
+            "Front_Right_Side_joint": -0.2,
+            "Hind_Left_Side_joint": -0.1,
+            "Hind_Right_Side_joint": 0.1, 
+            
             "Front_(Left|Right)_Thigh_joint": 0.8,
             "Hind_(Left|Right)_Thigh_joint": 1.0,
             ".*_Calf_joint": -1.5,

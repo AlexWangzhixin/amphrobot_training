@@ -181,12 +181,12 @@ class EventCfg:
     )
 
     # interval
-    # push_robot = EventTerm(
-    #     func=mdp.push_by_setting_velocity,
-    #     mode="interval",
-    #     interval_range_s=(5.0, 10.0),
-    #     params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    # )
+    push_robot = EventTerm(
+        func=mdp.push_by_setting_velocity,
+        mode="interval",
+        interval_range_s=(8.0, 12.0),
+        params={"velocity_range": {"x": (-0.2, 0.2), "y": (-0.2, 0.2)}},
+    )
 
 
 @configclass
@@ -195,7 +195,7 @@ class CommandsCfg:
 
     base_velocity = mdp.UniformLevelVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(6.0,8.0),
+        resampling_time_range=(10,10),
         rel_standing_envs=0.1,
         debug_vis=True,
         ranges=mdp.UniformLevelVelocityCommandCfg.Ranges(
@@ -226,31 +226,52 @@ class ActionsCfg:
 
         # Per-joint scale
         scale={
-            ".*_Side_joint":  0.3,
-            ".*_Thigh_joint": 0.25,
-            ".*_Calf_joint":  0.2,
+            ".*_Side_joint":  0.18,
+            ".*_Thigh_joint": 0.14,
+            ".*_Calf_joint":  0.12,
         },
 
         # Tight per-joint clip (recomputed for the scales above)
+        # clip={
+        #     # ---- Side joints (scale = 0.3) ----
+        #     "Front_Left_Side_joint":  (-1.40,  8.20),
+        #     "Front_Right_Side_joint": (-8.20,  1.40),
+        #     "Hind_Left_Side_joint":   (-1.40,  8.20),
+        #     "Hind_Right_Side_joint":  (-8.20,  1.40),
+
+        #     # ---- Thigh joints (scale = 0.25) ----
+        #     "Front_Left_Thigh_joint":  (-8.44,  2.04),
+        #     "Front_Right_Thigh_joint": (-8.44,  2.04),
+        #     "Hind_Left_Thigh_joint":   (-9.24,  1.24),
+        #     "Hind_Right_Thigh_joint":  (-9.24,  1.24),
+
+        #     # ---- Calf joints (scale = 0.2) ----
+        #     "Front_Left_Calf_joint":  (-4.30, 11.45),
+        #     "Front_Right_Calf_joint": (-4.30, 11.45),
+        #     "Hind_Left_Calf_joint":   (-4.30, 11.45),
+        #     "Hind_Right_Calf_joint":  (-4.30, 11.45),
+        # },
         clip={
             # ---- Side joints (scale = 0.3) ----
-            "Front_Left_Side_joint":  (-1.40,  8.20),
-            "Front_Right_Side_joint": (-8.20,  1.40),
-            "Hind_Left_Side_joint":   (-1.40,  8.20),
-            "Hind_Right_Side_joint":  (-8.20,  1.40),
+            "Front_Left_Side_joint":  (-0.52,  2.36),
+            "Front_Right_Side_joint": (-2.36,  0.52),
+            "Hind_Left_Side_joint":   (-0.52,  2.36),
+            "Hind_Right_Side_joint":  (-2.36,  0.52),
 
             # ---- Thigh joints (scale = 0.25) ----
-            "Front_Left_Thigh_joint":  (-8.44,  2.04),
-            "Front_Right_Thigh_joint": (-8.44,  2.04),
-            "Hind_Left_Thigh_joint":   (-9.24,  1.24),
-            "Hind_Right_Thigh_joint":  (-9.24,  1.24),
+            "Front_Left_Thigh_joint":  (-1.31,  1.31),
+            "Front_Right_Thigh_joint": (-1.31,  1.31),
+            "Hind_Left_Thigh_joint":   (-1.31,  1.31),
+            "Hind_Right_Thigh_joint":  (-1.31,  1.31),
 
             # ---- Calf joints (scale = 0.2) ----
-            "Front_Left_Calf_joint":  (-4.30, 11.45),
-            "Front_Right_Calf_joint": (-4.30, 11.45),
-            "Hind_Left_Calf_joint":   (-4.30, 11.45),
-            "Hind_Right_Calf_joint":  (-4.30, 11.45),
+            "Front_Left_Calf_joint":  (-2.36, 0.79),
+            "Front_Right_Calf_joint": (-2.36, 0.79),
+            "Hind_Left_Calf_joint":   (-2.36, 0.79),
+            "Hind_Right_Calf_joint":  (-2.36, 0.79),
         },
+
+        
     )
 
     # Reward defines the goal
@@ -323,28 +344,28 @@ class RewardsCfg:
         func=mdp.track_lin_vel_xy_exp, weight=7, params={"command_name": "base_velocity", "std": math.sqrt(0.09)}
     )
     track_ang_vel_z = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=1.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.09)}
     )
 
     # -- base
     base_linear_velocity = RewTerm(func=mdp.lin_vel_z_l2, weight=-1.0)
-    base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.02)
+    base_angular_velocity = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
     joint_vel = RewTerm(func=mdp.joint_vel_l2, weight=-3e-4)
-    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-7.5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
+    joint_acc = RewTerm(func=mdp.joint_acc_l2, weight=-5e-8) #-5e-8 -> -5e-7 not learning careful tuning!!!!!
     joint_torques = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.04)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.06)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-2.0)
     energy = RewTerm(func=mdp.energy, weight=-1e-5)
 
     # -- robot
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.5)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.4)
 
     joint_pos = RewTerm(
         func=mdp.joint_position_penalty,
-        weight=-0.2,
+        weight=-0.5,
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stand_still_scale": 2.0,
+            "stand_still_scale": 2,
             "velocity_threshold": 0.15,
         },
     )
@@ -352,7 +373,7 @@ class RewardsCfg:
     # -- feet
     feet_air_time = RewTerm(
         func=mdp.feet_air_time,
-        weight=0.3,
+        weight=0.15,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_Calf_link"),
             "command_name": "base_velocity",
